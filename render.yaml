@@ -1,6 +1,9 @@
-# Render Blueprint: free web service for the FastAPI API.
-# Dashboard: New → Blueprint → connect this repo → Render reads render.yaml.
-# After the first deploy, set secrets in the service → Environment (or complete sync prompts).
+# Render Blueprint — FastAPI API (free web service).
+# Required env (set in Dashboard or complete Blueprint prompts):
+#   CORS_ORIGINS, SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, SUPABASE_JWT_SECRET,
+#   and at least one of GROQ_API_KEY / GEMINI_API_KEY.
+# Optional: DAILY_LLM_CREDIT_LIMIT (default 20 in this file).
+# Service URL → use as VITE_API_URL on Vercel (no trailing slash).
 
 services:
   - type: web
@@ -8,10 +11,9 @@ services:
     runtime: python
     plan: free
     region: oregon
-    # Omit rootDir so this works when the service root is the repo (default). If you set Root Directory
-    # to "backend" in the dashboard, the conditionals below still work.
-    buildCommand: if [ -d backend ]; then pip install -r backend/requirements.txt; else pip install -r requirements.txt; fi
-    startCommand: if [ -f app/main.py ]; then uvicorn app.main:app --host 0.0.0.0 --port $PORT; else cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT; fi
+    # Works with repo root or Root Directory = backend (see conditionals).
+    buildCommand: if [ -d backend ]; then pip install --upgrade pip setuptools wheel && pip install --no-cache-dir -r backend/requirements.txt; else pip install --upgrade pip setuptools wheel && pip install --no-cache-dir -r requirements.txt; fi
+    startCommand: if [ -f app/main.py ]; then python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT; else cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT; fi
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
