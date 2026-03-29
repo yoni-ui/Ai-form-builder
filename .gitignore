@@ -5,6 +5,9 @@
 backend/.env
 frontend/.env.local
 
+# Local dev DB (SQLite fallback when Supabase unset)
+backend/.data/
+
 # Python
 __pycache__/
 *.py[cod]

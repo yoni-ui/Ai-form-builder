@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import uuid
+from collections import Counter
 from datetime import datetime, timezone
 from typing import Any
 
@@ -10,10 +11,172 @@ from app.config import Settings
 from app.models.schema import FormDefinition
 
 
+def supabase_configured(settings: Settings) -> bool:
+    return bool(
+        (settings.supabase_url or "").strip() and (settings.supabase_service_role_key or "").strip()
+    )
+
+
 def get_supabase(settings: Settings) -> Client:
-    if not settings.supabase_url or not settings.supabase_service_role_key:
+    if not supabase_configured(settings):
         raise RuntimeError("Supabase URL and service role key must be set for database operations")
     return create_client(settings.supabase_url, settings.supabase_service_role_key)
+
+
+# --- Unified store: Supabase in production, local SQLite when Supabase env is unset (local dev) ---
+
+
+def store_list_forms(settings: Settings, user_id: uuid.UUID) -> list[dict[str, Any]]:
+    if supabase_configured(settings):
+        return list_forms(get_supabase(settings), user_id)
+    from app import db_sqlite
+
+    return db_sqlite.list_forms(user_id)
+
+
+def store_create_form(
+    settings: Settings,
+    user_id: uuid.UUID,
+    title: str,
+    definition: FormDefinition,
+    published: bool = False,
+) -> dict[str, Any]:
+    if supabase_configured(settings):
+        return create_form(get_supabase(settings), user_id, title, definition, published)
+    from app import db_sqlite
+
+    return db_sqlite.create_form(user_id, title, definition, published)
+
+
+def store_get_form_owned(
+    settings: Settings, form_id: uuid.UUID, user_id: uuid.UUID
+) -> dict[str, Any] | None:
+    if supabase_configured(settings):
+        return get_form_owned(get_supabase(settings), form_id, user_id)
+    from app import db_sqlite
+
+    return db_sqlite.get_form_owned(form_id, user_id)
+
+
+def store_get_public_form_by_slug(settings: Settings, slug: str) -> dict[str, Any] | None:
+    if supabase_configured(settings):
+        return get_public_form_by_slug(get_supabase(settings), slug)
+    from app import db_sqlite
+
+    return db_sqlite.get_public_form_by_slug(slug)
+
+
+def store_update_form(
+    settings: Settings,
+    form_id: uuid.UUID,
+    user_id: uuid.UUID,
+    *,
+    title: str | None = None,
+    definition: FormDefinition | None = None,
+    published: bool | None = None,
+    slug: str | None = None,
+) -> dict[str, Any] | None:
+    if supabase_configured(settings):
+        return update_form(
+            get_supabase(settings),
+            form_id,
+            user_id,
+            title=title,
+            definition=definition,
+            published=published,
+            slug=slug,
+        )
+    from app import db_sqlite
+
+    return db_sqlite.update_form(
+        form_id,
+        user_id,
+        title=title,
+        definition=definition,
+        published=published,
+        slug=slug,
+    )
+
+
+def store_insert_response(
+    settings: Settings, form_id: uuid.UUID, answers: dict[str, Any]
+) -> dict[str, Any]:
+    if supabase_configured(settings):
+        return insert_response(get_supabase(settings), form_id, answers)
+    from app import db_sqlite
+
+    return db_sqlite.insert_response(form_id, answers)
+
+
+def store_list_responses(
+    settings: Settings, form_id: uuid.UUID, user_id: uuid.UUID
+) -> list[dict[str, Any]]:
+    if supabase_configured(settings):
+        return list_responses(get_supabase(settings), form_id, user_id)
+    from app import db_sqlite
+
+    return db_sqlite.list_responses(form_id, user_id)
+
+
+def _llm_usage_get_supabase(sb: Client, user_id: uuid.UUID, day: str) -> int:
+    res = (
+        sb.table("llm_usage")
+        .select("count")
+        .eq("user_id", str(user_id))
+        .eq("day", day)
+        .limit(1)
+        .execute()
+    )
+    if res.data:
+        return int(res.data[0]["count"])
+    return 0
+
+
+def _llm_usage_increment_supabase(sb: Client, user_id: uuid.UUID, day: str) -> None:
+    c = _llm_usage_get_supabase(sb, user_id, day)
+    row = {"user_id": str(user_id), "day": day, "count": c + 1}
+    if c == 0:
+        sb.table("llm_usage").insert(row).execute()
+    else:
+        sb.table("llm_usage").update({"count": c + 1}).eq("user_id", str(user_id)).eq("day", day).execute()
+
+
+def store_llm_usage_get(settings: Settings, user_id: uuid.UUID, day: str) -> int:
+    if supabase_configured(settings):
+        return _llm_usage_get_supabase(get_supabase(settings), user_id, day)
+    from app import db_sqlite
+
+    return db_sqlite.llm_usage_get(user_id, day)
+
+
+def store_llm_usage_increment(settings: Settings, user_id: uuid.UUID, day: str) -> None:
+    if supabase_configured(settings):
+        _llm_usage_increment_supabase(get_supabase(settings), user_id, day)
+        return
+    from app import db_sqlite
+
+    db_sqlite.llm_usage_increment(user_id, day)
+
+
+def store_response_counts_by_form_ids(settings: Settings, form_ids: list[str]) -> dict[str, int]:
+    if not form_ids:
+        return {}
+    if supabase_configured(settings):
+        sb = get_supabase(settings)
+        res = sb.table("responses").select("form_id").in_("form_id", form_ids).execute()
+        return dict(Counter(str(r["form_id"]) for r in (res.data or [])))
+    from app import db_sqlite
+
+    return db_sqlite.count_responses_by_form_ids(form_ids)
+
+
+def store_dashboard_forms(settings: Settings, user_id: uuid.UUID) -> list[dict[str, Any]]:
+    forms = store_list_forms(settings, user_id)
+    ids = [str(f["id"]) for f in forms]
+    counts = store_response_counts_by_form_ids(settings, ids)
+    for f in forms:
+        f["response_count"] = counts.get(str(f["id"]), 0)
+    return forms
 
 
 def now_iso() -> str:

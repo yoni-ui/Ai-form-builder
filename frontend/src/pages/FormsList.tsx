@@ -19,12 +19,20 @@ export default function FormsList() {
       <div className="space-y-6">
         <div className="flex items-center justify-between gap-4">
           <h1 className="text-2xl font-semibold text-zinc-900">My forms</h1>
-          <Link
-            to="/"
-            className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
-          >
-            New form
-          </Link>
+          <div className="flex gap-2">
+            <Link
+              to="/dashboard"
+              className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+            >
+              Dashboard
+            </Link>
+            <Link
+              to="/"
+              className="rounded-lg bg-violet-600 px-4 py-2 text-sm font-semibold text-white hover:bg-violet-700"
+            >
+              New form
+            </Link>
+          </div>
         </div>
         {err && <p className="text-sm text-red-600">{err}</p>}
         <ul className="divide-y divide-zinc-200 rounded-2xl border border-zinc-200 bg-white shadow-sm">

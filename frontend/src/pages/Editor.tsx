@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link, useLocation, useNavigate, useParams } from "react-router-dom";
+import { FormFillFields } from "@/components/FormFillFields";
 import { Layout } from "@/components/Layout";
 import { createForm, getForm, patchForm } from "@/lib/api";
 import type { FieldType, FormDefinition, FormField, FormSection } from "@/types/form";
@@ -238,9 +239,12 @@ export default function Editor() {
       ? `${window.location.origin}/f/${slug}`
       : "";
 
+  const noopAnswer = () => {};
+
   return (
     <Layout>
-      <div className="space-y-8">
+      <div className="lg:grid lg:grid-cols-[1fr_min(36vw,400px)] xl:grid-cols-[1fr_420px] gap-8 lg:items-start">
+        <div className="space-y-8 min-w-0">
         <div className="flex flex-wrap items-end justify-between gap-4">
           <div className="space-y-2 flex-1 min-w-[200px]">
             <label className="text-sm font-medium text-zinc-700">Form title</label>
@@ -270,14 +274,35 @@ export default function Editor() {
             <Link to="/forms" className="rounded-lg px-4 py-2 text-sm font-medium text-violet-600">
               My forms
             </Link>
+            <Link to="/dashboard" className="rounded-lg px-4 py-2 text-sm font-medium text-zinc-700">
+              Dashboard
+            </Link>
+            {formId && (
+              <Link
+                to={`/editor/${formId}/responses`}
+                className="rounded-lg px-4 py-2 text-sm font-medium text-violet-600"
+              >
+                Responses
+              </Link>
+            )}
           </div>
         </div>
 
         {published && shareUrl && (
-          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900">
-            <span className="font-medium">Public link: </span>
-            <a href={shareUrl} className="underline break-all">
-              {shareUrl}
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 flex flex-wrap items-center gap-3">
+            <span>
+              <span className="font-medium">Public link: </span>
+              <a href={shareUrl} className="underline break-all">
+                {shareUrl}
+              </a>
+            </span>
+            <a
+              href={shareUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="shrink-0 rounded-lg bg-emerald-700 px-3 py-1.5 text-white text-xs font-semibold hover:bg-emerald-800"
+            >
+              Open public page
             </a>
           </div>
         )}
@@ -387,6 +412,25 @@ export default function Editor() {
         >
           + Add section
         </button>
+        </div>
+
+        <aside className="hidden lg:block sticky top-24 rounded-2xl border border-zinc-200 bg-zinc-50/90 p-4 max-h-[calc(100vh-6rem)] overflow-y-auto">
+          <h3 className="text-sm font-semibold text-zinc-900">Public page preview</h3>
+          <p className="text-xs text-zinc-500 mt-1 mb-4">Read-only — same layout as /f/… for respondents.</p>
+          <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+            <p className="font-medium text-zinc-900 mb-1">{title}</p>
+            <p className="text-xs text-zinc-500 mb-4">Fill in the fields below and submit.</p>
+            <FormFillFields
+              definition={definition}
+              answers={{}}
+              onChange={noopAnswer}
+              readOnly
+            />
+            <div className="mt-4 rounded-lg bg-zinc-100 py-2.5 text-center text-xs font-medium text-zinc-400">
+              Submit (preview)
+            </div>
+          </div>
+        </aside>
       </div>
     </Layout>
   );

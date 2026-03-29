@@ -14,7 +14,7 @@ export default function Login() {
     e.preventDefault();
     const sb = getSupabase();
     if (!sb) {
-      setMsg("Supabase is not configured. Use local dev: leave JWT secret empty on the API and use X-Dev-User-Id.");
+      setMsg("Supabase client is not configured in the browser.");
       return;
     }
     setLoading(true);
@@ -34,10 +34,13 @@ export default function Login() {
         <div className="max-w-md mx-auto space-y-6">
           <Wordmark />
           <p className="text-zinc-600">
-            Auth is optional for local development. Set <code className="text-sm bg-zinc-100 px-1 rounded">VITE_SUPABASE_URL</code> and{" "}
-            <code className="text-sm bg-zinc-100 px-1 rounded">VITE_SUPABASE_ANON_KEY</code> to enable magic links. The API can run without{" "}
-            <code className="text-sm bg-zinc-100 px-1 rounded">SUPABASE_JWT_SECRET</code> for dev (uses{" "}
-            <code className="text-sm bg-zinc-100 px-1 rounded">X-Dev-User-Id</code>).
+            Auth is optional for local development. Forms and responses are stored in{" "}
+            <strong>local SQLite</strong> when <code className="text-sm bg-zinc-100 px-1 rounded">SUPABASE_URL</code> /{" "}
+            <code className="text-sm bg-zinc-100 px-1 rounded">SUPABASE_SERVICE_ROLE_KEY</code> are unset on the API. For magic links, set{" "}
+            <code className="text-sm bg-zinc-100 px-1 rounded">VITE_SUPABASE_URL</code> and{" "}
+            <code className="text-sm bg-zinc-100 px-1 rounded">VITE_SUPABASE_ANON_KEY</code>. Without{" "}
+            <code className="text-sm bg-zinc-100 px-1 rounded">SUPABASE_JWT_SECRET</code> on the API, the browser sends{" "}
+            <code className="text-sm bg-zinc-100 px-1 rounded">X-Dev-User-Id</code> for signed-in-style requests.
           </p>
           <Link to="/" className="text-violet-600 font-medium">
             ← Back home

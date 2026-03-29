@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Navigate, Route, Routes } from "react-router-dom";
 import { getSupabase } from "@/lib/supabase";
+import Dashboard from "@/pages/Dashboard";
 import Editor from "@/pages/Editor";
 import FormsList from "@/pages/FormsList";
 import Landing from "@/pages/Landing";
@@ -20,6 +21,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
+      <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/forms" element={<FormsList />} />
       <Route path="/editor" element={<Editor />} />
       <Route path="/editor/:id/responses" element={<Responses />} />

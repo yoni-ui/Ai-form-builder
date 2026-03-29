@@ -18,6 +18,7 @@ def get_current_user_id(
     creds: HTTPAuthorizationCredentials | None = Depends(security),
 ) -> uuid.UUID:
     settings = get_settings()
+    request.state.auth_via_supabase_jwt = False
     if creds and creds.scheme.lower() == "bearer" and settings.supabase_jwt_secret:
         try:
             payload = jwt.decode(
@@ -30,6 +31,7 @@ def get_current_user_id(
             sub = payload.get("sub")
             if not sub:
                 raise HTTPException(status_code=401, detail="Invalid token: no sub")
+            request.state.auth_via_supabase_jwt = True
             return uuid.UUID(sub)
         except jwt.PyJWTError as e:
             raise HTTPException(status_code=401, detail=f"Invalid token: {e}") from e

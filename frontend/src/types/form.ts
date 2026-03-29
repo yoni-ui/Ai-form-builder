@@ -36,4 +36,6 @@ export interface FormRecord {
   definition: FormDefinition;
   created_at?: string;
   updated_at?: string;
+  /** Present on dashboard list */
+  response_count?: number;
 }

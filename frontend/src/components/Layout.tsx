@@ -9,6 +9,9 @@ export function Layout({ children }: { children: ReactNode }) {
         <div className="mx-auto flex max-w-5xl items-center justify-between gap-4 px-4 py-4">
           <Wordmark />
           <nav className="flex items-center gap-4 text-sm font-medium">
+            <Link to="/dashboard" className="text-zinc-600 hover:text-zinc-900">
+              Dashboard
+            </Link>
             <Link to="/forms" className="text-zinc-600 hover:text-zinc-900">
               My forms
             </Link>

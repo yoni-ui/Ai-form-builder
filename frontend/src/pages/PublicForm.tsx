@@ -1,14 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
+import { FormFillFields, type FillAnswers } from "@/components/FormFillFields";
 import { Wordmark } from "@/components/Wordmark";
 import { getPublicForm, submitPublic } from "@/lib/api";
-import type { FormDefinition, FormField } from "@/types/form";
+import type { FormDefinition } from "@/types/form";
 
 export default function PublicForm() {
   const { slug } = useParams<{ slug: string }>();
   const [title, setTitle] = useState("");
   const [definition, setDefinition] = useState<FormDefinition | null>(null);
-  const [answers, setAnswers] = useState<Record<string, string | boolean>>({});
+  const [answers, setAnswers] = useState<FillAnswers>({});
   const [done, setDone] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
@@ -18,8 +19,12 @@ export default function PublicForm() {
       .then((r) => {
         setTitle(r.title);
         setDefinition(r.definition);
+        document.title = `${r.title} · useformly.ai`;
       })
       .catch((e) => setErr(e instanceof Error ? e.message : String(e)));
+    return () => {
+      document.title = "useformly.ai";
+    };
   }, [slug]);
 
   async function onSubmit(e: React.FormEvent) {
@@ -29,13 +34,14 @@ export default function PublicForm() {
     try {
       await submitPublic(slug, answers);
       setDone(true);
+      document.title = "Thank you · useformly.ai";
     } catch (x) {
       setErr(x instanceof Error ? x.message : String(x));
     }
   }
 
-  function setAnswer(id: string, v: string | boolean) {
-    setAnswers((a) => ({ ...a, [id]: v }));
+  function onAnswerChange(id: string, value: string | boolean) {
+    setAnswers((a) => ({ ...a, [id]: value }));
   }
 
   if (err && !definition) {
@@ -66,85 +72,21 @@ export default function PublicForm() {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-50 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-zinc-50 to-zinc-100 py-12 px-4">
       <div className="max-w-lg mx-auto">
         <div className="mb-8 flex justify-center">
           <Wordmark />
         </div>
-        <div className="rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-semibold text-zinc-900 mb-6">{title}</h1>
+        <div className="rounded-2xl border border-zinc-200/80 bg-white p-8 shadow-md shadow-zinc-200/50">
+          <h1 className="text-2xl font-semibold text-zinc-900 mb-2">{title}</h1>
+          <p className="text-sm text-zinc-500 mb-6">Fill in the fields below and submit.</p>
           <form onSubmit={onSubmit} className="space-y-5">
-            {definition.sections.map((sec) => (
-              <div key={sec.id} className="space-y-4">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-zinc-500">
-                  {sec.title}
-                </h2>
-                {sec.fields.map((f: FormField) => (
-                  <div key={f.id}>
-                    <label className="block text-sm font-medium text-zinc-700 mb-1">
-                      {f.label}
-                      {f.required && <span className="text-red-500"> *</span>}
-                    </label>
-                    {f.type === "textarea" && (
-                      <textarea
-                        required={f.required}
-                        className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900"
-                        rows={3}
-                        value={(answers[f.id] as string) ?? ""}
-                        onChange={(e) => setAnswer(f.id, e.target.value)}
-                        placeholder={f.placeholder ?? undefined}
-                      />
-                    )}
-                    {f.type === "checkbox" && (
-                      <label className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={Boolean(answers[f.id])}
-                          onChange={(e) => setAnswer(f.id, e.target.checked)}
-                        />
-                        <span className="text-sm text-zinc-600">Yes</span>
-                      </label>
-                    )}
-                    {(f.type === "text" ||
-                      f.type === "email" ||
-                      f.type === "number" ||
-                      f.type === "date") && (
-                      <input
-                        type={
-                          f.type === "email"
-                            ? "email"
-                            : f.type === "number"
-                              ? "number"
-                              : f.type === "date"
-                                ? "date"
-                                : "text"
-                        }
-                        required={f.required}
-                        className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900"
-                        value={(answers[f.id] as string) ?? ""}
-                        onChange={(e) => setAnswer(f.id, e.target.value)}
-                        placeholder={f.placeholder ?? undefined}
-                      />
-                    )}
-                    {f.type === "select" && (
-                      <select
-                        required={f.required}
-                        className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-zinc-900"
-                        value={(answers[f.id] as string) ?? ""}
-                        onChange={(e) => setAnswer(f.id, e.target.value)}
-                      >
-                        <option value="">Choose…</option>
-                        {(f.options ?? []).map((o) => (
-                          <option key={o} value={o}>
-                            {o}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </div>
-                ))}
-              </div>
-            ))}
+            <FormFillFields
+              definition={definition}
+              answers={answers}
+              onChange={onAnswerChange}
+              readOnly={false}
+            />
             {err && <p className="text-sm text-red-600">{err}</p>}
             <button
               type="submit"
