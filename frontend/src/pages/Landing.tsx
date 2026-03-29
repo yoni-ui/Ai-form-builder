@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Layout } from "@/components/Layout";
-import { createFormUnified, fetchMeUsage } from "@/lib/api";
+import { createFormUnified, fetchMeUsage, isRemoteApiBase } from "@/lib/api";
 import { getSupabase, supabaseConfigured } from "@/lib/supabase";
 
 export default function Landing() {
@@ -48,10 +48,11 @@ export default function Landing() {
     e.preventDefault();
     if (!canSubmit) return;
     setErr(null);
-    if (import.meta.env.PROD) {
+    // Local `npm run dev` uses empty VITE_API_URL + proxy → no gate. Hosted API (Render etc.) needs JWT.
+    if (isRemoteApiBase()) {
       if (!supabaseConfigured) {
         setErr(
-          "Production needs VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY on Vercel (same Supabase project as the API) so you can sign in and send a Bearer token.",
+          "This app points at a hosted API: set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY (same Supabase project as the API) so you can sign in and send a Bearer token.",
         );
         return;
       }
@@ -59,7 +60,7 @@ export default function Landing() {
       if (sb) {
         const { data } = await sb.auth.getSession();
         if (!data.session) {
-          setErr("Sign in to generate forms — the deployed API requires a Supabase session (Authorization bearer token).");
+          setErr("Sign in to generate forms — the hosted API requires a Supabase session (Bearer token).");
           return;
         }
       }

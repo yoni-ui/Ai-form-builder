@@ -1,6 +1,19 @@
 import { getSupabase } from "./supabase";
 import type { FormDefinition, FormRecord } from "@/types/form";
 
+/** True when VITE_API_URL points at a hosted API (e.g. Render). Empty = dev proxy to local API. */
+export function isRemoteApiBase(): boolean {
+  const raw = (import.meta.env.VITE_API_URL ?? "").trim();
+  if (!raw) return false;
+  try {
+    const href = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
+    const host = new URL(href).hostname.toLowerCase();
+    return host !== "localhost" && host !== "127.0.0.1";
+  } catch {
+    return true;
+  }
+}
+
 const base = () => {
   const u = (import.meta.env.VITE_API_URL ?? "").trim().replace(/\/$/, "");
   if (import.meta.env.PROD && !u) {
