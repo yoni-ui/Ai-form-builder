@@ -8,9 +8,10 @@ services:
     runtime: python
     plan: free
     region: oregon
-    rootDir: backend
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    # Omit rootDir so this works when the service root is the repo (default). If you set Root Directory
+    # to "backend" in the dashboard, the conditionals below still work.
+    buildCommand: if [ -d backend ]; then pip install -r backend/requirements.txt; else pip install -r requirements.txt; fi
+    startCommand: if [ -f app/main.py ]; then uvicorn app.main:app --host 0.0.0.0 --port $PORT; else cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT; fi
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
