@@ -11,13 +11,13 @@ services:
     runtime: python
     plan: free
     region: oregon
-    # Works with repo root or Root Directory = backend (see conditionals).
+    # Start: prefer backend/app (repo root). If Root Directory = backend, only ./app exists.
     buildCommand: if [ -d backend ]; then pip install --upgrade pip setuptools wheel && pip install --no-cache-dir -r backend/requirements.txt; else pip install --upgrade pip setuptools wheel && pip install --no-cache-dir -r requirements.txt; fi
-    startCommand: if [ -f app/main.py ]; then python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT; else cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT; fi
+    startCommand: if [ -d backend/app ]; then cd backend && python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT; elif [ -d app ]; then python -m uvicorn app.main:app --host 0.0.0.0 --port $PORT; else echo "Render: missing app - use repo root or Root Directory backend. pwd=$(pwd)" && exit 1; fi
     healthCheckPath: /health
     envVars:
       - key: PYTHON_VERSION
-        value: "3.12.0"
+        value: "3.12.8"
       # Comma-separated origins (no spaces). Example: https://your-app.vercel.app,http://localhost:5173
       - key: CORS_ORIGINS
         sync: false
