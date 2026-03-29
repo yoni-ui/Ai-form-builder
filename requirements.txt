@@ -1,0 +1,2 @@
+# API dependencies live under backend/. Render uses backend/requirements.txt (see render.yaml rootDir).
+-r backend/requirements.txt
