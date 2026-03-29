@@ -112,8 +112,8 @@ export default function Landing() {
             </>
           )}
           {!supabaseConfigured && (
-            <span className="text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1">
-              Local dev: no Supabase in browser — API may use SQLite + X-Dev-User-Id without JWT secret.
+            <span className="text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-1">
+              Dev: Supabase not configured in the browser — use SQLite + dev headers on the API, or add VITE_SUPABASE_* for real auth.
             </span>
           )}
         </div>
