@@ -2,10 +2,10 @@ import { getSupabase } from "./supabase";
 import type { FormDefinition, FormRecord } from "@/types/form";
 
 const base = () => {
-  const u = import.meta.env.VITE_API_URL ?? "";
-  if (import.meta.env.PROD && !u.trim()) {
-    console.warn(
-      "[useformly] VITE_API_URL is not set. Set it in Vercel → Settings → Environment Variables to your deployed API (e.g. https://your-api.onrender.com). Otherwise /api requests hit this static host and return 404.",
+  const u = (import.meta.env.VITE_API_URL ?? "").trim().replace(/\/$/, "");
+  if (import.meta.env.PROD && !u) {
+    throw new Error(
+      "VITE_API_URL is not set. In Vercel → Project → Settings → Environment Variables, add VITE_API_URL=https://your-api-host.example.com (no trailing slash). The UI cannot call the API on *.vercel.app without it.",
     );
   }
   return u;
@@ -120,13 +120,13 @@ export async function createForm(title: string, definition: FormDefinition, publ
     headers: await authHeaders(),
     body: JSON.stringify({ title, definition, published }),
   });
-  if (!res.ok) throw new Error(await res.text());
+  await throwIfNotOk(res);
   return res.json() as Promise<FormRecord>;
 }
 
 export async function getForm(id: string) {
   const res = await fetch(`${base()}/api/forms/${id}`, { headers: await authHeaders() });
-  if (!res.ok) throw new Error(await res.text());
+  await throwIfNotOk(res);
   return res.json() as Promise<FormRecord>;
 }
 
