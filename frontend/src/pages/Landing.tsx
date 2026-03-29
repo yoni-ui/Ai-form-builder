@@ -48,6 +48,22 @@ export default function Landing() {
     e.preventDefault();
     if (!canSubmit) return;
     setErr(null);
+    if (import.meta.env.PROD) {
+      if (!supabaseConfigured) {
+        setErr(
+          "Production needs VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY on Vercel (same Supabase project as the API) so you can sign in and send a Bearer token.",
+        );
+        return;
+      }
+      const sb = getSupabase();
+      if (sb) {
+        const { data } = await sb.auth.getSession();
+        if (!data.session) {
+          setErr("Sign in to generate forms — the deployed API requires a Supabase session (Authorization bearer token).");
+          return;
+        }
+      }
+    }
     setBusy(true);
     try {
       const { definition } = await createFormUnified(prompt, file);

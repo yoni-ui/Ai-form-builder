@@ -37,7 +37,14 @@ def get_current_user_id(
             raise HTTPException(status_code=401, detail=f"Invalid token: {e}") from e
 
     if settings.supabase_jwt_secret:
-        raise HTTPException(status_code=401, detail="Missing or invalid Authorization header")
+        raise HTTPException(
+            status_code=401,
+            detail=(
+                "Missing or invalid Authorization: sign in on the app (Supabase session), "
+                "and set VITE_SUPABASE_URL + VITE_SUPABASE_ANON_KEY on the frontend to match this API’s project. "
+                "The API ignores X-Dev-User-Id when SUPABASE_JWT_SECRET is set."
+            ),
+        )
 
     dev = request.headers.get("X-Dev-User-Id")
     if dev:
